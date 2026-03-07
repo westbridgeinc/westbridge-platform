@@ -144,13 +144,14 @@ jobs:
           NEXT_PUBLIC_APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
           NODE_ENV: production
           ENCRYPTION_KEY: ${{ env.ENCRYPTION_KEY }}
+      - name: Pack build artifact
+        run: tar -czf /tmp/nextjs-build.tar.gz .next/
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: .next/
+          path: /tmp/nextjs-build.tar.gz
           retention-days: 1
-          include-hidden-files: true
 
   # ── E2E ─────────────────────────────────────────────────────────────────────
   e2e:
@@ -184,7 +185,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
-          path: .next/
+          path: /tmp/
+      - name: Unpack build artifact
+        run: tar -xzf /tmp/nextjs-build.tar.gz
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
       - name: Start app
@@ -225,7 +228,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
-          path: .next/
+          path: /tmp/
+      - name: Unpack build artifact
+        run: tar -xzf /tmp/nextjs-build.tar.gz
 
       - name: Create release zip
         run: |
