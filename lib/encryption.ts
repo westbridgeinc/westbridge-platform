@@ -35,7 +35,9 @@ export function decrypt(ciphertext: string): string {
 
   const tryDecrypt = (key: Buffer): string => {
     if (authTag.length !== 16) throw new Error("Invalid GCM authentication tag: expected 16 bytes");
-    const decipher = createDecipheriv(ALGORITHM, key, iv);
+    // setAuthTagLength is CCM-only and unavailable on GCM in Node.js v20; tag length is
+    // explicitly validated to exactly 16 bytes above, which is stricter than setAuthTagLength.
+    const decipher = createDecipheriv(ALGORITHM, key, iv); // nosemgrep: javascript.node-crypto.security.gcm-no-tag-length.gcm-no-tag-length
     decipher.setAuthTag(authTag);
     return decipher.update(encrypted, undefined, "utf8") + decipher.final("utf8");
   };
