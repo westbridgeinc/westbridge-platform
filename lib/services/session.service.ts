@@ -93,7 +93,7 @@ export async function createSession(
   }
 }
 
-export type SessionRole = "owner" | "admin" | "member";
+export type SessionRole = "owner" | "admin" | "manager" | "member" | "viewer";
 
 /**
  * Validate session token. Returns userId, accountId, role; optionally erpnextSid for ERP proxy.
@@ -115,7 +115,8 @@ export async function validateSession(
         const cached = await redis.get(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached) as { userId: string; accountId: string; role: string; erpnextSid?: string | null };
-          const role = ((parsed.role === "owner" || parsed.role === "admin" || parsed.role === "member") ? parsed.role : "member") as SessionRole;
+          const VALID_ROLES = new Set<SessionRole>(["owner", "admin", "manager", "member", "viewer"]);
+          const role = (VALID_ROLES.has(parsed.role as SessionRole) ? parsed.role : "member") as SessionRole;
           return ok({ userId: parsed.userId, accountId: parsed.accountId, role, erpnextSid: parsed.erpnextSid ?? undefined });
         }
       } catch {
@@ -188,9 +189,8 @@ export async function validateSession(
         data: { lastActiveAt: now },
       });
     }
-    const role = ((session.user.role === "owner" || session.user.role === "admin" || session.user.role === "member")
-      ? session.user.role
-      : "member") as SessionRole;
+    const VALID_ROLES = new Set<SessionRole>(["owner", "admin", "manager", "member", "viewer"]);
+    const role = (VALID_ROLES.has(session.user.role as SessionRole) ? session.user.role : "member") as SessionRole;
     const erpnextSid = session.erpnextSid ? (() => { try { return decrypt(session.erpnextSid); } catch { return undefined; } })() : undefined;
     const result = { userId: session.userId, accountId: session.user.accountId, role, erpnextSid };
     const redisForWrite = getRedis();

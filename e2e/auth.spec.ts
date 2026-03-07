@@ -25,7 +25,7 @@ test.describe("auth", () => {
     });
     expect(loginRes.status()).toBe(401);
     const body = await loginRes.json();
-    expect(body.error?.message).toBe("Invalid credentials");
+    expect(body.error?.message).toBe("Invalid email or password.");
   });
 
   test("login with valid credentials sets session cookie and redirects to /dashboard", async ({

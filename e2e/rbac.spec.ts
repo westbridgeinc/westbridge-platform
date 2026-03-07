@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 import { createTestSession } from "./fixtures/session";
 
 test.describe("rbac", () => {
-  test("member role user gets 403 on POST /api/erp/doc", async ({ request }) => {
-    const sess = await createTestSession("member");
+  test("viewer role user gets 403 on POST /api/erp/doc", async ({ request }) => {
+    const sess = await createTestSession("viewer");
     try {
       const csrfRes = await request.get("/api/csrf");
       const csrfData = await csrfRes.json();
