@@ -10,7 +10,7 @@ let redis: Redis | null = null;
 
 function getRedis(): Redis | null {
   if (process.env.NODE_ENV === "production" && !process.env.REDIS_PASSWORD) {
-    throw new Error("REDIS_PASSWORD is required in production");
+    return null;
   }
   if (redis) return redis;
   try {
