@@ -34,8 +34,8 @@ export function decrypt(ciphertext: string): string {
   const encrypted = Buffer.from(encryptedHex, "hex");
 
   const tryDecrypt = (key: Buffer): string => {
+    if (authTag.length !== 16) throw new Error("Invalid GCM authentication tag: expected 16 bytes");
     const decipher = createDecipheriv(ALGORITHM, key, iv);
-    decipher.setAuthTagLength(16); // Explicitly enforce 128-bit (16-byte) authentication tag
     decipher.setAuthTag(authTag);
     return decipher.update(encrypted, undefined, "utf8") + decipher.final("utf8");
   };
