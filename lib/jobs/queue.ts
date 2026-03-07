@@ -7,10 +7,6 @@
  */
 import { Queue, type ConnectionOptions } from "bullmq";
 
-if (process.env.NODE_ENV === "production" && !process.env.REDIS_PASSWORD) {
-  throw new Error("REDIS_PASSWORD is required in production");
-}
-
 const connection: ConnectionOptions = {
   host: process.env.REDIS_HOST ?? "localhost",
   port: Number(process.env.REDIS_PORT ?? 6380),
