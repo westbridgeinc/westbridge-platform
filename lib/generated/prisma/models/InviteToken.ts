@@ -224,6 +224,7 @@ export type InviteTokenOrderByWithRelationInput = {
 export type InviteTokenWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   tokenHash?: string
+  accountId_email?: Prisma.InviteTokenAccountIdEmailCompoundUniqueInput
   AND?: Prisma.InviteTokenWhereInput | Prisma.InviteTokenWhereInput[]
   OR?: Prisma.InviteTokenWhereInput[]
   NOT?: Prisma.InviteTokenWhereInput | Prisma.InviteTokenWhereInput[]
@@ -234,7 +235,7 @@ export type InviteTokenWhereUniqueInput = Prisma.AtLeast<{
   usedAt?: Prisma.DateTimeNullableFilter<"InviteToken"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"InviteToken"> | Date | string
   account?: Prisma.XOR<Prisma.AccountScalarRelationFilter, Prisma.AccountWhereInput>
-}, "id" | "tokenHash">
+}, "id" | "tokenHash" | "accountId_email">
 
 export type InviteTokenOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -348,6 +349,11 @@ export type InviteTokenListRelationFilter = {
 
 export type InviteTokenOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type InviteTokenAccountIdEmailCompoundUniqueInput = {
+  accountId: string
+  email: string
 }
 
 export type InviteTokenCountOrderByAggregateInput = {
