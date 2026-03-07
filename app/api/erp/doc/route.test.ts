@@ -13,22 +13,23 @@ vi.mock("next/headers", () => ({
     }),
 }));
 vi.mock("@/lib/services/erp.service", () => ({ getDoc: vi.fn(), createDoc: vi.fn() }));
-vi.mock("@/lib/services/audit.service", () => ({ logAudit: vi.fn(), auditContext: () => ({ ipAddress: "127.0.0.1", userAgent: "test" }) }));
+vi.mock("@/lib/services/audit.service", () => ({ logAudit: vi.fn().mockResolvedValue(undefined), auditContext: () => ({ ipAddress: "127.0.0.1", userAgent: "test" }) }));
 vi.mock("@/lib/security-monitor", () => ({ reportSecurityEvent: vi.fn() }));
 vi.mock("@/lib/csrf", () => ({ validateCsrf: vi.fn(() => true), CSRF_COOKIE_NAME: "westbridge_csrf" }));
+vi.mock("@/lib/api/rate-limit-tiers", () => ({ checkTieredRateLimit: vi.fn(() => Promise.resolve({ allowed: true })), getClientIdentifier: () => "127.0.0.1", rateLimitHeaders: () => ({}) }));
 
 describe("POST /api/erp/doc", () => {
   beforeEach(() => {
     validateSessionMock.mockReset();
   });
 
-  it("returns 403 when session role is member (create requires owner or admin)", async () => {
+  it("returns 403 when session role is viewer (create requires invoices:write)", async () => {
     validateSessionMock.mockResolvedValue({
       ok: true,
       data: {
         userId: "u1",
         accountId: "a1",
-        role: "member",
+        role: "viewer",
         erpnextSid: "erpsid",
       },
     });

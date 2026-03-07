@@ -50,7 +50,7 @@ describe("POST /api/auth/login", () => {
     const response = await POST(request);
     expect(response.status).toBe(401);
     const json = await response.json();
-    expect(json.error?.message).toBe("Invalid credentials");
+    expect(json.error?.message).toBe("Invalid email or password.");
     expect(json.error?.code).toBe("AUTH_FAILED");
   });
 

@@ -10,6 +10,8 @@ vi.mock("@/lib/services/billing.service", () => ({
   markAccountPaid: (...args: unknown[]) => markAccountPaidMock(...args),
 }));
 vi.mock("@/lib/ratelimit", () => ({ checkRateLimit: () => Promise.resolve({ allowed: true }), getClientIdentifier: () => "ip" }));
+vi.mock("@/lib/api/rate-limit-tiers", () => ({ checkTieredRateLimit: vi.fn(() => Promise.resolve({ allowed: true })), getClientIdentifier: () => "127.0.0.1", rateLimitHeaders: () => ({}) }));
+vi.mock("@/lib/redis", () => ({ getRedis: () => ({ set: vi.fn().mockResolvedValue("OK"), get: vi.fn().mockResolvedValue(null) }) }));
 vi.mock("@/lib/services/audit.service", () => ({ logAudit: vi.fn(), auditContext: () => ({ ipAddress: "127.0.0.1", userAgent: "test" }) }));
 
 describe("POST /api/webhooks/2checkout", () => {

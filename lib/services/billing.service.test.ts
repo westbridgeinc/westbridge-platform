@@ -4,8 +4,11 @@ const findUniqueMock = vi.fn();
 const deleteMock = vi.fn();
 const createMock = vi.fn();
 const updateManyMock = vi.fn();
+const transactionMock = vi.fn();
+
 vi.mock("@/lib/data/prisma", () => ({
   prisma: {
+    $transaction: transactionMock,
     account: {
       findUnique: findUniqueMock,
       delete: deleteMock,
@@ -22,14 +25,40 @@ vi.mock("@/lib/data/twocheckout.client", () => ({
   isIPNSuccess: vi.fn(() => false),
 }));
 
+vi.mock("@/lib/email", () => ({
+  sendEmail: vi.fn().mockResolvedValue({ ok: true, data: { id: "email-1" } }),
+}));
+
+vi.mock("@/lib/email/templates", () => ({
+  accountActivatedEmail: vi.fn(() => "<html></html>"),
+  inviteEmail: vi.fn(() => "<html></html>"),
+}));
+
+/** Simulate prisma.$transaction by running the callback with a tx that uses our mocks */
+function setupTransaction() {
+  transactionMock.mockImplementation(async (fn: (tx: unknown) => unknown) =>
+    fn({
+      account: {
+        findUnique: findUniqueMock,
+        delete: deleteMock,
+        create: createMock,
+      },
+    })
+  );
+}
+
 describe("billing.service", () => {
   beforeEach(() => {
     findUniqueMock.mockReset();
     deleteMock.mockReset();
     createMock.mockReset();
     updateManyMock.mockReset();
+    transactionMock.mockReset();
     getPaymentLinkUrlMock.mockReset();
     getPaymentLinkUrlMock.mockReturnValue("https://checkout.example/pay");
+    // Default: findUnique returns null (no account found) — avoids .catch() on undefined
+    findUniqueMock.mockResolvedValue(null);
+    setupTransaction();
   });
 
   it("returns error when email is missing", async () => {
@@ -114,6 +143,7 @@ describe("billing.service", () => {
 
   it("markAccountPaid updates account and returns result", async () => {
     updateManyMock.mockResolvedValue({ count: 1 });
+    findUniqueMock.mockResolvedValue(null);
     const { markAccountPaid } = await import("./billing.service");
     const r = await markAccountPaid("acc-1", "ord-1", "cust-1");
     expect(r.ok).toBe(true);

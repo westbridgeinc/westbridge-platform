@@ -32,7 +32,7 @@ describe("erp.service", () => {
       erpListMock.mockResolvedValue({ ok: true, data: [] });
       const { list } = await import("./erp.service");
       await list("Sales Invoice", "session-1", undefined, "account-1");
-      expect(erpListMock).toHaveBeenCalledWith("Sales Invoice", "session-1", undefined, "account-1");
+      expect(erpListMock).toHaveBeenCalledWith("Sales Invoice", "session-1", undefined, "account-1", undefined);
     });
 
     it("returns data from erpList", async () => {

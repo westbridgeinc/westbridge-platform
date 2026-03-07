@@ -16,8 +16,8 @@ describe("modules", () => {
   it("MODULES and MODULE_IDS length match", () => {
     expect(MODULES.length).toBe(MODULE_IDS.length);
   });
-  it("PLANS has starter professional enterprise", () => {
-    expect(PLANS.map((p) => p.id)).toEqual(["starter", "professional", "enterprise"]);
+  it("PLANS has starter business enterprise", () => {
+    expect(PLANS.map((p) => p.id)).toEqual(["starter", "business", "enterprise"]);
   });
   it("getPlan returns plan by id", () => {
     expect(getPlan("starter").name).toBe("Starter");
@@ -32,16 +32,16 @@ describe("modules", () => {
   });
   it("isModuleIncludedInPlan", () => {
     expect(isModuleIncludedInPlan("general-ledger", "starter")).toBe(true);
-    expect(isModuleIncludedInPlan("lead-management", "starter")).toBe(false);
+    expect(isModuleIncludedInPlan("stock-management", "starter")).toBe(false);
   });
   it("getAddOnPrice enterprise returns null", () => {
-    expect(getAddOnPrice("lead-management", "enterprise")).toBeNull();
+    expect(getAddOnPrice("stock-management", "enterprise")).toBeNull();
   });
   it("getAddOnPrice included module returns null", () => {
     expect(getAddOnPrice("general-ledger", "starter")).toBeNull();
   });
   it("getAddOnPrice add-on returns number", () => {
-    expect(getAddOnPrice("lead-management", "starter")).toBe(10);
+    expect(getAddOnPrice("stock-management", "starter")).toBe(349);
   });
   it("CATEGORIES and MODULE_ROWS", () => {
     expect(CATEGORIES).toContain("Finance & Accounting");

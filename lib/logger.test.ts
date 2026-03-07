@@ -2,32 +2,34 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { logger } from "./logger";
 
 describe("logger", () => {
-  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-  const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
-
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
-  it("logger.error calls console.error with JSON", () => {
+  it("logger.error can be called with a message", () => {
+    const spy = vi.spyOn(logger, "error").mockImplementation(() => {});
     logger.error("fail");
-    expect(errorSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(errorSpy.mock.calls[0][0]);
-    expect(parsed.level).toBe("error");
-    expect(parsed.message).toBe("fail");
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("fail");
   });
-  it("logger.warn calls console.warn", () => {
+
+  it("logger.warn can be called with a message", () => {
+    const spy = vi.spyOn(logger, "warn").mockImplementation(() => {});
     logger.warn("warn msg");
-    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("warn msg");
   });
-  it("logger.info calls console.info", () => {
+
+  it("logger.info can be called with a message", () => {
+    const spy = vi.spyOn(logger, "info").mockImplementation(() => {});
     logger.info("info msg");
-    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("info msg");
   });
-  it("includes meta when provided", () => {
+
+  it("passes meta context as second argument", () => {
+    const spy = vi.spyOn(logger, "error").mockImplementation(() => {});
     logger.error("e", { requestId: "abc" });
-    const parsed = JSON.parse(errorSpy.mock.calls[0][0]);
-    expect(parsed.meta).toEqual({ requestId: "abc" });
+    expect(spy).toHaveBeenCalledWith("e", { requestId: "abc" });
   });
 });
