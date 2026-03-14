@@ -1,34 +1,62 @@
 name: Performance
 
 on:
-  schedule:
-    - cron: '0 3 * * *'  # Nightly 3am
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only — load tests need a running app stack
   pull_request:
     paths:
       - 'app/**'
       - 'lib/**'
       - 'load-tests/**'
 
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/westbridge
+  CSRF_SECRET: ci-perf-secret-not-for-production
+  ERPNEXT_URL: http://localhost:8080
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  TWOCO_MERCHANT_CODE: ci
+  TWOCO_SECRET_WORD: ci
+  RESEND_API_KEY: re_ci_placeholder
+  ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+  METRICS_TOKEN: ci-metrics-token
+
 jobs:
   load-test:
     name: Load Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: westbridge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start app stack
-        run: docker compose up -d && sleep 60
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
 
-      - name: Run migrations
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run DB migrations
         run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/westbridge_test
 
-      - name: Seed test data
-        run: npx tsx scripts/seed-staging.ts
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/westbridge_test
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm start &
+          npx wait-on --timeout 60000 http://localhost:3000
 
       - name: Run smoke test
         uses: grafana/k6-action@v0.3.0

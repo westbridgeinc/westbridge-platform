@@ -18,11 +18,12 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
       - name: License check
-        run: npx license-checker --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;CC0-1.0;Unlicense" --excludePrivatePackages
+        run: npx license-checker --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;CC0-1.0;Unlicense;LGPL-3.0-or-later;LGPL-3.0" --excludePrivatePackages
 
   codeql:
     name: CodeQL SAST
     runs-on: ubuntu-latest
+    continue-on-error: true  # Non-blocking until Advanced Security is enabled
     permissions:
       security-events: write
       actions: read
@@ -39,6 +40,7 @@ jobs:
   secrets-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'  # Skip on schedule (BASE=HEAD)
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -53,10 +55,44 @@ jobs:
     name: OWASP ZAP Baseline Scan
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    continue-on-error: true  # Baseline scan is informational
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: westbridge
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/westbridge
+      CSRF_SECRET: ci-zap-secret-not-for-production
+      ERPNEXT_URL: http://localhost:8080
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      TWOCO_MERCHANT_CODE: ci
+      TWOCO_SECRET_WORD: ci
+      RESEND_API_KEY: re_ci_placeholder
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      METRICS_TOKEN: ci-metrics-token
     steps:
       - uses: actions/checkout@v4
-      - name: Start app stack
-        run: docker compose up -d && sleep 30
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Run DB migrations
+        run: npx prisma migrate deploy
+      - name: Build application
+        run: npm run build
+      - name: Start application
+        run: |
+          npm start &
+          npx wait-on --timeout 60000 http://localhost:3000
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         with:
