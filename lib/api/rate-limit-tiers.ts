@@ -86,7 +86,7 @@ export async function checkTieredRateLimit(
   if (!redis) {
     // In production, deny requests when Redis is unavailable (fail-closed).
     // In non-production, allow requests to avoid blocking CI/dev workflows.
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !process.env.CI) {
       logger.warn("Rate limit: Redis unavailable, denying request");
       return { allowed: false, limit, remaining: 0, reset, retryAfter: 60 };
     }
@@ -120,7 +120,7 @@ export async function checkTieredRateLimit(
     logger.warn("Rate limit: Redis error", { error: e instanceof Error ? e.message : String(e) });
     // In production, deny requests on Redis error (fail-closed).
     // In non-production, allow requests to avoid blocking CI/dev workflows.
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !process.env.CI) {
       return { allowed: false, limit, remaining: 0, reset, retryAfter: 60 };
     }
     return { allowed: true, limit, remaining: limit, reset };
@@ -140,7 +140,7 @@ export async function checkEmailRateLimit(email: string): Promise<RateLimitResul
 
   const redis = getRedis();
   if (!redis) {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !process.env.CI) {
       logger.warn("Rate limit: Redis unavailable, denying request");
       return { allowed: false, limit: EMAIL_RATE_LIMIT, remaining: 0, reset, retryAfter: 60 };
     }
@@ -164,7 +164,7 @@ export async function checkEmailRateLimit(email: string): Promise<RateLimitResul
     return { allowed: true, limit: EMAIL_RATE_LIMIT, remaining, reset };
   } catch (e) {
     logger.warn("Rate limit: Redis error", { error: e instanceof Error ? e.message : String(e) });
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !process.env.CI) {
       return { allowed: false, limit: EMAIL_RATE_LIMIT, remaining: 0, reset, retryAfter: 60 };
     }
     return { allowed: true, limit: EMAIL_RATE_LIMIT, remaining: EMAIL_RATE_LIMIT, reset };
