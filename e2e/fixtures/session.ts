@@ -5,8 +5,23 @@
  * generated Prisma client when loaded from Playwright's TypeScript transform.
  */
 
-import { createHash, randomBytes } from "crypto";
+import { createHash, createCipheriv, randomBytes } from "crypto";
 import { Client } from "pg";
+
+/**
+ * Encrypt a value using the same AES-256-GCM scheme as lib/encryption.ts.
+ * Re-implemented here to avoid ESM/CJS import issues with the app's encryption module.
+ */
+function encryptForTest(plaintext: string): string {
+  const secret = process.env.ENCRYPTION_KEY;
+  if (!secret || secret.length < 64) throw new Error("ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
+  const key = Buffer.from(secret, "hex");
+  const iv = randomBytes(16);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return [iv.toString("hex"), authTag.toString("hex"), encrypted.toString("hex")].join(":");
+}
 
 function getDb(): Client {
   return new Client({
@@ -69,10 +84,12 @@ export async function createTestSession(role: SessionRole): Promise<TestSession>
     const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
+    // Encrypt the erpnext_sid the same way the app does (AES-256-GCM)
+    const encryptedSid = encryptForTest("e2e-erp-sid");
     await db.query(
       `INSERT INTO sessions (id, user_id, token, erpnext_sid, expires_at)
-       VALUES (gen_random_uuid()::text, $1, $2, 'e2e-erp-sid', $3)`,
-      [userId, tokenHash, expiresAt]
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4)`,
+      [userId, tokenHash, encryptedSid, expiresAt]
     );
 
     await db.end();

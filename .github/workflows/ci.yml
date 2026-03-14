@@ -171,6 +171,14 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6380:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -202,11 +210,13 @@ jobs:
           TWOCO_MERCHANT_CODE: ${{ env.TWOCO_MERCHANT_CODE }}
           TWOCO_SECRET_WORD: ${{ env.TWOCO_SECRET_WORD }}
           ENCRYPTION_KEY: ${{ env.ENCRYPTION_KEY }}
+          REDIS_URL: redis://localhost:6380
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           BASE_URL: http://localhost:3000
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          ENCRYPTION_KEY: ${{ env.ENCRYPTION_KEY }}
 
   # ── Package ──────────────────────────────────────────────────────────────────
   # Runs after all test jobs pass. Produces the distribution zip via
